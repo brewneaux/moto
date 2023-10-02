@@ -363,8 +363,11 @@ class Item(BaseModel):
                     del self.attrs[attribute_name]
                 continue
             new_value = list(update_action["Value"].values())[0]
+
             if action == "PUT":
                 # TODO deal with other types
+                if set(update_action["Value"].keys()) == set(["BOOL"]):
+                    self.attrs[attribute_name] = DynamoType({"BOOL": new_value})
                 if set(update_action["Value"].keys()) == set(["SS"]):
                     self.attrs[attribute_name] = DynamoType({"SS": new_value})
                 elif set(update_action["Value"].keys()) == set(["NS"]):

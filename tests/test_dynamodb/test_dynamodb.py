@@ -5818,3 +5818,37 @@ def test_invalid_projection_expressions():
         ClientError, match="ProjectionExpression: Attribute name contains white space"
     ):
         client.scan(TableName=table_name, ProjectionExpression="not_a_keyword, na me")
+
+@mock_dynamodb
+def test_update_item_with_bool_value():
+    name = "TestTable"
+    conn = boto3.client(
+        "dynamodb",
+        region_name="us-west-2",
+        aws_access_key_id="ak",
+        aws_secret_access_key="sk",
+    )
+    conn.create_table(
+        TableName=name,
+        KeySchema=[{"AttributeName": "test_key", "KeyType": "HASH"}],
+        AttributeDefinitions=[{"AttributeName": "test_key", "AttributeType": "S"}],
+        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+    )
+
+    conn.put_item(
+        TableName=name,
+        Item={
+            "test_key": {"S": "Phrederyck"},
+            "is_enabled": {"BOOL": "True"}
+        },
+    )
+
+    conn.update_item(
+        TableName=name,
+        Key={"test_key": {"S": "Phrederyck"}},
+        AttributeUpdates={"is_enabled": {"Value": False, "Action": "PUT"}}
+    )
+
+    received_item = conn.get_item(TableName=name, Key={"test_key": {"S": "Phrederyck"}})
+    assert "BOOL" in received_item["Item"]["is_enabled"].keys()
+    assert received_item["Item"]["is_enabled"].get("BOOL") == False
